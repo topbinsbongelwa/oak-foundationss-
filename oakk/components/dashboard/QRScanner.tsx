@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { supabase } from "../../lib/supabase";
+import { checkInAttendee, findAttendee } from "../../lib/attendees";
 import type { CheckInResult } from "../../lib/types";
 
 interface QRScannerProps {
@@ -26,32 +26,22 @@ export default function QRScanner({ onScanResult, onScanStart }: QRScannerProps)
     setLastScan(decodedText);
 
     try {
-      const { data: attendee, error: lookupError } = await supabase
-        .from("attendees")
-        .select("id")
-        .eq("qr_code", decodedText)
-        .maybeSingle();
-
-      if (lookupError) {
-        onScanResult({ success: false, message: "Database lookup failed" });
-        return;
-      }
+      const attendee = await findAttendee(decodedText);
 
       if (!attendee) {
         onScanResult({ success: false, message: "Attendee not found" });
         return;
       }
 
-      const { data, error } = await supabase.rpc("check_in_attendee", {
-        p_attendee_id: attendee.id,
-      });
-
-      if (error) {
-        onScanResult({ success: false, message: "Check-in failed: " + error.message });
-        return;
-      }
-
-      onScanResult(data as CheckInResult);
+      const result = await checkInAttendee(attendee);
+      onScanResult({
+        success: result.success,
+        message: result.message,
+        attendee: result.attendee,
+        check_in: result.attendee.checked_in_at
+          ? { checked_in_at: result.attendee.checked_in_at }
+          : undefined,
+      } as CheckInResult);
     } catch {
       onScanResult({ success: false, message: "An unexpected error occurred" });
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { checkInAttendee, findAttendee } from "../../lib/attendees";
 import type { CheckInResult } from "../../lib/types";
 
 interface ManualCodeEntryProps {
@@ -18,17 +18,7 @@ export default function ManualCodeEntry({ onScanResult }: ManualCodeEntryProps) 
 
     setLoading(true);
     try {
-      const { data: attendee, error: lookupError } = await supabase
-        .from("attendees")
-        .select("id")
-        .eq("qr_code", trimmed)
-        .maybeSingle();
-
-      if (lookupError) {
-        onScanResult({ success: false, message: "Database lookup failed" });
-        setLoading(false);
-        return;
-      }
+      const attendee = await findAttendee(trimmed);
 
       if (!attendee) {
         onScanResult({ success: false, message: "Attendee not found" });
@@ -36,15 +26,15 @@ export default function ManualCodeEntry({ onScanResult }: ManualCodeEntryProps) 
         return;
       }
 
-      const { data, error } = await supabase.rpc("check_in_attendee", {
-        p_attendee_id: attendee.id,
-      });
-
-      if (error) {
-        onScanResult({ success: false, message: "Check-in failed: " + error.message });
-      } else {
-        onScanResult(data as CheckInResult);
-      }
+      const result = await checkInAttendee(attendee);
+      onScanResult({
+        success: result.success,
+        message: result.message,
+        attendee: result.attendee,
+        check_in: result.attendee.checked_in_at
+          ? { checked_in_at: result.attendee.checked_in_at }
+          : undefined,
+      } as CheckInResult);
     } catch {
       onScanResult({ success: false, message: "An unexpected error occurred" });
     } finally {

@@ -104,7 +104,13 @@ export default function CheckInPage() {
         </ul>
       </div>
       <button type="button" onClick={resetScan} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1c385f] px-3 py-2.5 text-[8px] font-semibold text-white shadow-sm transition-colors hover:bg-[#152e51] cursor-pointer"><span className="text-[11px]">↻</span> Try Again</button>
-      <button type="button" className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-2.5 text-[8px] font-semibold text-gray-700 shadow-sm ring-1 ring-gray-200 cursor-pointer"><span className="text-[10px]">♧</span> Contact Coordination Team</button>
+      <button type="button" className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-2.5 text-[8px] font-semibold text-gray-700 shadow-sm ring-1 ring-gray-200 cursor-pointer">
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
+          <path d="m5 7 7 5 7-5" />
+        </svg>
+        Contact Coordination Team
+      </button>
     </div>
   );
 

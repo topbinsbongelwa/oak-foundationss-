@@ -2,14 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../../lib/supabase";
-import type { Day3Attendee, CheckIn } from "../../../lib/types";
-
-interface AttendeeRow extends Day3Attendee {
-  check_ins: CheckIn[];
-}
+import type { Day3Attendee } from "../../../lib/types";
 
 export default function AttendeesPage() {
-  const [attendees, setAttendees] = useState<AttendeeRow[]>([]);
+  const [attendees, setAttendees] = useState<Day3Attendee[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +13,7 @@ export default function AttendeesPage() {
     setLoading(true);
     let query = supabase
       .from("attendees")
-      .select("*, check_ins(*)")
+      .select("*")
       .order("full_name");
 
     if (search.trim()) {
@@ -28,7 +24,7 @@ export default function AttendeesPage() {
     }
 
     const { data } = await query.limit(200);
-    setAttendees((data as AttendeeRow[]) || []);
+    setAttendees((data as Day3Attendee[]) || []);
     setLoading(false);
   }, [search]);
 
@@ -45,8 +41,6 @@ export default function AttendeesPage() {
     const d = new Date(iso);
     return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
   };
-
-  const today = new Date().toISOString().split("T")[0];
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -108,8 +102,7 @@ export default function AttendeesPage() {
                 </tr>
               )}
               {attendees.map((a, i) => {
-                const todayCheckin = a.check_ins?.find((c) => c.check_in_date === today);
-                const isCheckedIn = !!todayCheckin;
+                const isCheckedIn = a.checked_in;
                 const color = avatarColors[i % avatarColors.length];
                 return (
                   <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
@@ -122,7 +115,7 @@ export default function AttendeesPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-[12px] text-gray-600 font-mono">{a.email || "—"}</td>
-                    <td className="px-5 py-3 text-[12px] text-gray-700">{a.accommodation || "—"}</td>
+                    <td className="px-5 py-3 text-[12px] text-gray-700">{a.organization || "—"}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                         isCheckedIn
@@ -133,10 +126,10 @@ export default function AttendeesPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-[12px] text-gray-600">
-                      {todayCheckin ? formatDate(todayCheckin.checked_in_at) : "—"}
+                      {a.checked_in_at ? formatDate(a.checked_in_at) : "—"}
                     </td>
                     <td className="px-5 py-3 text-[12px] text-gray-600 font-mono">
-                      {todayCheckin ? formatTime(todayCheckin.checked_in_at) : "—"}
+                      {a.checked_in_at ? formatTime(a.checked_in_at) : "—"}
                     </td>
                   </tr>
                 );
@@ -158,8 +151,7 @@ export default function AttendeesPage() {
             </div>
           )}
           {attendees.map((a, i) => {
-            const todayCheckin = a.check_ins?.find((c) => c.check_in_date === today);
-            const isCheckedIn = !!todayCheckin;
+            const isCheckedIn = a.checked_in;
             const color = avatarColors[i % avatarColors.length];
             return (
               <div key={a.id} className="px-4 py-3 flex items-center gap-3">
@@ -169,7 +161,7 @@ export default function AttendeesPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-gray-900 truncate">{a.full_name}</p>
                   <p className="text-[11px] text-gray-500 truncate">{a.email || "No email"}</p>
-                  <p className="text-[11px] text-gray-500">{a.accommodation || "No accommodation"}</p>
+                  <p className="text-[11px] text-gray-500">{a.organization || "No organization"}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
@@ -179,8 +171,8 @@ export default function AttendeesPage() {
                   }`}>
                     {isCheckedIn ? "Checked In" : "Not Checked"}
                   </span>
-                  {todayCheckin && (
-                    <p className="text-[10px] text-gray-400 mt-0.5 font-mono">{formatTime(todayCheckin.checked_in_at)}</p>
+                  {a.checked_in_at && (
+                    <p className="text-[10px] text-gray-400 mt-0.5 font-mono">{formatTime(a.checked_in_at)}</p>
                   )}
                 </div>
               </div>

@@ -2,11 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { supabase } from "../../../lib/supabase";
-import type { Day3Attendee, CheckIn } from "../../../lib/types";
-
-interface ExportRow extends Day3Attendee {
-  check_ins: CheckIn[];
-}
+import type { Day3Attendee } from "../../../lib/types";
 
 export default function ExportPage() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +15,7 @@ export default function ExportPage() {
     try {
       const { data } = await supabase
         .from("attendees")
-        .select("*, check_ins(*)")
+        .select("*")
         .order("full_name")
         .limit(10000);
 
@@ -29,18 +25,18 @@ export default function ExportPage() {
         return;
       }
 
-      const rows = data as ExportRow[];
+      const rows = data as Day3Attendee[];
 
-      const csvHeader = "Name,Email,Accommodation,Check-in Date,Check-in Time,Status";
+      const csvHeader = "Name,Email,Organization,Role,Check-in Date,Check-in Time,Status";
       const csvRows = rows.map((a) => {
-        const todayCheckin = a.check_ins?.find((c) => c.check_in_date === today);
         const name = `"${(a.full_name || "").replace(/"/g, '""')}"`;
-        const email = `"${(a.email || "").replace(/"/g, '""')}"`;
-        const accom = `"${(a.accommodation || "None").replace(/"/g, '""')}"`;
-        const date = todayCheckin ? new Date(todayCheckin.checked_in_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
-        const time = todayCheckin ? new Date(todayCheckin.checked_in_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
-        const status = todayCheckin ? "Checked In" : "Not Checked In";
-        return `${name},${email},${accom},${date},${time},${status}`;
+        const email = `"${a.email.replace(/"/g, '""')}"`;
+        const organization = `"${(a.organization || "").replace(/"/g, '""')}"`;
+        const role = `"${(a.role || "").replace(/"/g, '""')}"`;
+        const date = a.checked_in_at ? new Date(a.checked_in_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
+        const time = a.checked_in_at ? new Date(a.checked_in_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+        const status = a.checked_in ? "Checked In" : "Not Checked In";
+        return `${name},${email},${organization},${role},${date},${time},${status}`;
       });
 
       const csvContent = [csvHeader, ...csvRows].join("\n");

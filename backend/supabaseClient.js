@@ -2,18 +2,20 @@ require("dotenv").config();
 
 const { createClient } = require("@supabase/supabase-js");
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "http://127.0.0.1:54321";
+const supabaseKey =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_KEY ||
+  "your-local-anon-key";
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    "Missing SUPABASE_URL or SUPABASE_KEY in .env file"
-  );
-}
-
-const supabase = createClient(
-  supabaseUrl,
-  supabaseKey
-);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
 module.exports = supabase;

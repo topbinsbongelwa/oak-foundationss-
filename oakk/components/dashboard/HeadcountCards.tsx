@@ -11,7 +11,7 @@ export default function HeadcountCards() {
   const fetchHeadcount = useCallback(async () => {
     const [totalRes, checkedRes] = await Promise.all([
       supabase.from("attendees").select("id", { count: "exact", head: true }),
-      supabase.from("check_ins").select("id", { count: "exact", head: true }).eq("check_in_date", today),
+      supabase.from("attendees").select("id", { count: "exact", head: true }).eq("checked_in", true),
     ]);
 
     const total = totalRes.count ?? 0;
@@ -24,10 +24,10 @@ export default function HeadcountCards() {
 
     const channel = supabase
       .channel("headcount-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "check_ins" }, () => {
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "attendees" }, () => {
         fetchHeadcount();
       })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "check_ins" }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "attendees" }, () => {
         fetchHeadcount();
       })
       .subscribe();

@@ -54,10 +54,15 @@ export const EVENT_DETAILS = {
 export interface Day3Attendee {
   id: string;
   full_name: string;
-  email: string | null;
+  email: string;
   phone: string | null;
-  qr_code: string | null;
-  accommodation: string | null;
+  organization: string | null;
+  role: string | null;
+  pass_code: string;
+  qr_code: string;
+  consent: boolean;
+  checked_in: boolean;
+  checked_in_at: string | null;
   created_at: string;
 }
 
@@ -83,17 +88,16 @@ export interface AdminUser {
 export interface CheckInResult {
   success: boolean;
   message: string;
-  check_in?: {
-    id: string;
-    checked_in_at: string;
-    check_in_date: string;
-  };
+  check_in?: { checked_in_at: string };
   attendee?: {
     id: string;
     full_name: string;
-    email: string | null;
-    accommodation: string | null;
-    qr_code?: string | null;
+    email: string;
+    organization: string | null;
+    role: string | null;
+    qr_code: string;
+    checked_in: boolean;
+    checked_in_at: string | null;
   };
 }
 

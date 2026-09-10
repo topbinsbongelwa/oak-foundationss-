@@ -6,8 +6,8 @@ import {
   FormErrors,
   ROLE_OPTIONS,
 } from "../lib/types";
-import { supabase } from "../lib/supabase";
-import { generatePassCode, saveAttendeeToStorage } from "../lib/utils";
+import { registerAttendee as registerAttendeeInSupabase } from "../lib/attendees";
+import { saveAttendeeToStorage } from "../lib/utils";
 
 interface RegistrationFormProps {
   onSuccess: (attendee: AttendeeRegistration) => void;
@@ -98,7 +98,6 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     e.preventDefault();
 
     if (!validate()) {
-      // Scroll to the first error
       window.scrollTo({ top: 320, behavior: "smooth" });
       return;
     }
@@ -107,37 +106,17 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     setSubmitError(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "register-attendee",
-        {
-          body: {
-            first_name: formData.firstName.trim(),
-            last_name: formData.lastName.trim(),
-            organization: formData.organisation.trim(),
-            role: formData.role,
-            email: formData.email.trim().toLowerCase(),
-            phone: formData.phone.trim() || undefined,
-            dietary_requirements: formData.dietary.trim() || undefined,
-          },
-        }
-      );
+      const data = await registerAttendeeInSupabase({
+        full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim().toLowerCase(),
+        organization: formData.organisation.trim(),
+        role: formData.role,
+        phone: formData.phone.trim() || undefined,
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error || "Registration failed");
-      }
-
-      const registered = data.attendee;
-
-      const passCode = generatePassCode();
       const newAttendee: AttendeeRegistration = {
-        id:
-          (registered?.unique_id as string) ||
-          "att_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
-        passCode,
+        id: data.id,
+        passCode: data.pass_code,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         organisation: formData.organisation.trim(),
@@ -149,8 +128,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         accessibility: formData.accessibility.trim() || undefined,
         travel: formData.travel.trim() || undefined,
         consentAgreed: formData.consentAgreed,
-        registeredAt:
-          (registered?.created_at as string) || new Date().toISOString(),
+        registeredAt: new Date().toISOString(),
       };
 
       saveAttendeeToStorage(newAttendee);
@@ -160,7 +138,11 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         err instanceof Error
           ? err.message
           : "Registration failed. Please try again.";
-      setSubmitError(message);
+      if (message.includes("23505") || message.includes("duplicate")) {
+        setSubmitError("This email is already registered.");
+      } else {
+        setSubmitError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
